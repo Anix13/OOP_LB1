@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace OOP_LB1
@@ -22,6 +23,12 @@ namespace OOP_LB1
 
         private void InitializeFormComponents()
         {
+            string message = "Вариант 7:  Отдел кадров\n" +
+                             "23ВП2\n" +
+                             "Тареева Мирошниченко";
+
+            MessageBox.Show(message, "Лабораторная работа номер 1", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
             this.Text = "HR Department Management";
             this.Size = new System.Drawing.Size(1000, 850);
             this.BackColor = System.Drawing.Color.LightSkyBlue;
@@ -137,25 +144,19 @@ namespace OOP_LB1
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(txtCompanyName.Text) ||
-                string.IsNullOrWhiteSpace(txtEmployees.Text) ||
-                string.IsNullOrWhiteSpace(txtHours.Text) ||
-                string.IsNullOrWhiteSpace(txtRate.Text) ||
-                string.IsNullOrWhiteSpace(txtTax.Text) ||
-                string.IsNullOrWhiteSpace(txtAddress.Text) ||
-                string.IsNullOrWhiteSpace(txtContact.Text))
-            {
-                MessageBox.Show("Заполните все поля!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            // Проверка уникальности названия компании
             if (departments.Any(d => d.CompanyName.Equals(txtCompanyName.Text, StringComparison.OrdinalIgnoreCase)))
             {
                 MessageBox.Show("Компания с таким названием уже существует!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
+            string contact = txtContact.Text;
+            string phonePattern = @"^\+?\d{1,4}?[-.\s]?(\(?\d{1,3}?\)?[-.\s]?)?\d{1,3}[-.\s]?\d{1,3}[-.\s]?\d{1,4}$";
+            if (!Regex.IsMatch(contact, phonePattern))
+            {
+                MessageBox.Show("Введите корректный телефонный номер.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
             HRDepartment department = null;
             try
             {
@@ -178,7 +179,7 @@ namespace OOP_LB1
             }
 
             departments.Add(department);
-            MessageBox.Show($"Отдел создан! Всего создано {HRDepartment.Count} отделов.");
+            MessageBox.Show($"Отдел создан! ");
             UpdateDepartmentList();
         }
 
@@ -186,16 +187,50 @@ namespace OOP_LB1
         {
             if (cmbDepartments.SelectedItem is HRDepartment selectedDept)
             {
-                selectedDept.Employees = int.TryParse(txtUpdateEmployees.Text, out int emp) ? emp : selectedDept.Employees;
-                selectedDept.HoursPerMonth = double.TryParse(txtUpdateHours.Text, out double hours) ? hours : selectedDept.HoursPerMonth;
-                selectedDept.HourlyRate = decimal.TryParse(txtUpdateRate.Text, out decimal rate) ? rate : selectedDept.HourlyRate;
-                selectedDept.TaxRate = double.TryParse(txtUpdateTax.Text, out double tax) ? tax : selectedDept.TaxRate;
-                selectedDept.Address = txtUpdateAddress.Text;
-                selectedDept.Contact = txtUpdateContact.Text;
+                // Проверка числовых значений и вывод окна с ошибкой, если введены некорректные или отрицательные данные
+                if (!int.TryParse(txtUpdateEmployees.Text, out int updatedEmployees) || updatedEmployees < 0)
+                {
+                    MessageBox.Show("Введите корректное число для количества сотрудников (не отрицательное).", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                if (!double.TryParse(txtUpdateHours.Text, out double updatedHours) || updatedHours < 0)
+                {
+                    MessageBox.Show("Введите корректное число для часов в месяц (не отрицательное).", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                if (!decimal.TryParse(txtUpdateRate.Text, out decimal updatedRate) || updatedRate < 0)
+                {
+                    MessageBox.Show("Введите корректное число для почасовой ставки (не отрицательное).", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                if (!double.TryParse(txtUpdateTax.Text, out double updatedTax) || updatedTax < 0)
+                {
+                    MessageBox.Show("Введите корректное число для налога (не отрицательное).", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                string contact = txtUpdateContact.Text;
+                string phonePattern = @"^\+?\d{1,4}?[-.\s]?(\(?\d{1,3}?\)?[-.\s]?)?\d{1,3}[-.\s]?\d{1,3}[-.\s]?\d{1,4}$";
+                if (!Regex.IsMatch(contact, phonePattern))
+                {
+                    MessageBox.Show("Введите корректный телефонный номер.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                // Используем метод UpdateFields для обновления данных
+                string updatedAddress = txtUpdateAddress.Text;
+                string updatedContact = txtUpdateContact.Text;
+
+                selectedDept.UpdateFields(updatedEmployees, updatedHours, updatedRate, updatedTax, updatedAddress, updatedContact);
+
                 MessageBox.Show("Объект обновлен!");
                 UpdateDepartmentList();
             }
         }
+
 
         private void CmbDepartments_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -222,5 +257,6 @@ namespace OOP_LB1
             dgvDepartments.DataSource = new BindingSource { DataSource = departments };
             ((BindingSource)dgvDepartments.DataSource).ResetBindings(false);
         }
+
     }
 }

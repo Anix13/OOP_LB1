@@ -63,25 +63,35 @@ namespace OOP_LB1
             if (Employees <= 0 || HoursPerMonth <= 0 || HourlyRate <= 0)
             {
                 throw new CustomException("Невозможно вычислить зарплату из-за отрицательных значений.",
-                                           "HR001", "Введены отрицательные значения для сотрудников, часов, ставки или налога.");
+                                           "HR001", "Введены неположительные значения для сотрудников, часов, ставки или налога.");
             }
 
             decimal grossSalary = (decimal)HoursPerMonth * HourlyRate;
 
             // Проверка на переполнение
-            if (grossSalary < 0)
+            if (grossSalary > 100000000)
             {
                 throw new SalaryOverflowException("Переполнение при расчете зарплаты.",
-                                                  "HR002", "Зарплата слишком велика для обработки.");
+                                                  "HR002", "Зарплата слишком велика для обработки. Слишком большие значения почасовой ставки или кол-ва часов");
             }
 
             return grossSalary - (grossSalary * (decimal)TaxRate / 100);
         }
 
         // Метод для изменения полей на основе пользовательского ввода
-        public void UpdateFields()
-        { 
+        public void UpdateFields(int employees, double hoursPerMonth, decimal hourlyRate, double taxRate, string address, string contact)
+        {
+            Employees = employees;
+            HoursPerMonth = hoursPerMonth;
+            HourlyRate = hourlyRate;
+            TaxRate = taxRate;
+            Address = address;
+            Contact = contact;
+
+            // Если зарплата зависит от этих значений, пересчитываем её.
+            GrossSalary = CalculateSalary();
         }
+
 
 
         // Метод для обработки исключений
