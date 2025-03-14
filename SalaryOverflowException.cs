@@ -2,7 +2,6 @@
 
 namespace OOP_LB1
 {
-    // Класс исключения, наследующий от OverflowException
     public class SalaryOverflowException : OverflowException
     {
         public string ErrorCode { get; set; }
