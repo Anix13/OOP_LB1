@@ -60,6 +60,8 @@
     <Compile Include="HRForm.Designer.cs">
       <DependentUpon>HRForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="HRListener.cs" />
+    <Compile Include="HRQueue.cs" />
     <Compile Include="MessageBoxHelper.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
