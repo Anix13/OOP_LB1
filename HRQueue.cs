@@ -25,6 +25,8 @@ public class HRQueue
     }
 
     public IEnumerable<HRDepartment> GetDepartments() => departments;
+
+
 }
 
 

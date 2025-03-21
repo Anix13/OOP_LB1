@@ -69,17 +69,19 @@ namespace OOP_LB1
             decimal grossSalary = (decimal)HoursPerMonth * HourlyRate;
 
             // Проверка на переполнение
-            if (grossSalary > 100000000)
+            if ((grossSalary > 100000000) || (grossSalary < 0))
             {
                 throw new SalaryOverflowException("Переполнение при расчете зарплаты.",
                                                   "HR002", "Зарплата слишком велика для обработки. Слишком большие значения почасовой ставки или кол-ва часов");
             }
 
-            return grossSalary - (grossSalary * (decimal)TaxRate / 100);
+            return Math.Abs(grossSalary - (grossSalary * (decimal)TaxRate / 100));
         }
 
-        // Метод для изменения полей на основе пользовательского ввода
-        public void UpdateFields(int employees, double hoursPerMonth, decimal hourlyRate, double taxRate, string address, string contact)
+    
+
+    // Метод для изменения полей на основе пользовательского ввода
+    public void UpdateFields(int employees, double hoursPerMonth, decimal hourlyRate, double taxRate, string address, string contact)
         {
             Employees = employees;
             HoursPerMonth = hoursPerMonth;
