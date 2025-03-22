@@ -118,3 +118,67 @@ namespace HRProject.Models
 
 
 }
+
+namespace HRProject.Models
+{
+    using System;
+
+    namespace HRProject.Models
+    {
+        // Класс для IT-отдела
+        public class ITDepartment : HRDepartment
+        {
+            // Переопределяем поле employees
+            private int employees;
+
+            public ITDepartment(string companyName, int employees, double hoursPerMonth, decimal hourlyRate, double taxRate, string address, string contact)
+                : base(companyName, employees, hoursPerMonth, hourlyRate, taxRate, address, contact)
+            {
+                // Преобразуем employees в двоичный формат и сохраняем
+                this.employees = ToBinary(employees);
+            }
+
+            // Метод для преобразования int в двоичный формат (возвращает int)
+            private int ToBinary(int value)
+            {
+                if (value == 0)
+                    return 0;
+
+                int binary = 0;
+                int baseMultiplier = 1; // Для построения двоичного числа
+
+                while (value > 0)
+                {
+                    int remainder = value % 2; // Получаем остаток от деления на 2
+                    binary += remainder * baseMultiplier; // Добавляем к результату
+                    baseMultiplier *= 10; // Увеличиваем разряд
+                    value /= 2; // Делим число на 2
+                }
+
+                return binary;
+            }
+
+            // Переопределяем метод ToString для вывода данных
+            public override string ToString()
+            {
+                return $"Компания: {CompanyName}\n" +
+                       $"Работников (в двоичном формате): {employees}\n" +
+                       $"Норма часов: {HoursPerMonth}\n" +
+                       $"Ставка: {HourlyRate}\n" +
+                       $"Налог: {TaxRate}\n" +
+                       $"Адрес: {Address}\n" +
+                       $"Контакт: {Contact}";
+            }
+        }
+    }
+
+    // Класс для финансового отдела
+    public class FinanceDepartment : HRDepartment
+    {
+        public FinanceDepartment(string companyName, int employees, double hoursPerMonth, decimal hourlyRate, double taxRate, string address, string contact)
+            : base(companyName, employees, hoursPerMonth, hourlyRate, taxRate, address, contact)
+        {
+        }
+
+    }
+}

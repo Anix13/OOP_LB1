@@ -1,46 +1,57 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using HRProject.Factories;
+using HRProject.Models.HRProject.Models;
 
 namespace HRProject.Models
 {
+    // Определение делегата
     public delegate void HRQueueEventHandler(string message);
 
     public class HRQueue
     {
         private Queue<HRDepartment> departments = new Queue<HRDepartment>();
-        private readonly IHRDepartmentFactory factory;
+        private readonly IHRDepartmentFactory defaultFactory;
 
         public event HRQueueEventHandler ItemAdded;
         public event HRQueueEventHandler ItemUpdated;
 
-        // Конструктор
-        public HRQueue(IHRDepartmentFactory factory)
+        public HRQueue(IHRDepartmentFactory defaultFactory)
         {
-            this.factory = factory;
+            this.defaultFactory = defaultFactory;
         }
 
-        // Метод добавления отдела
         public void Enqueue(string companyName, int employees, double hoursPerMonth, decimal hourlyRate, double taxRate, string address, string contact)
         {
-            // Создание нового отдела с использованием фабрики
-            HRDepartment department = factory.CreateHRDepartment(companyName, employees, hoursPerMonth, hourlyRate, taxRate, address, contact);
+            IHRDepartmentFactory factory = defaultFactory;
 
-            // Добавление отдела в очередь
+            // Выбор фабрики в зависимости от названия компании
+            if (companyName.IndexOf("ИТ", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                factory = new ITDepartmentFactory(); // Создаем ITDepartment
+            }
+            else
+            {
+                factory = new FinanceDepartmentFactory(); // Создаем FinanceDepartment
+            }
+
+            // Создание объекта через фабрику
+            HRDepartment department = factory.CreateHRDepartment(companyName, employees, hoursPerMonth, hourlyRate, taxRate, address, contact);
             departments.Enqueue(department);
 
-            // Вызываем событие добавления нового отдела
-            ItemAdded?.Invoke($"Добавлен отдел: {department.CompanyName}");
+            // Определяем тип отдела и формируем сообщение
+            string departmentType = department is ITDepartment ? "ИТ" : "финансовый";
+            ItemAdded?.Invoke($"Добавлен {departmentType} отдел: {department.CompanyName}");
         }
 
-        // Метод для обновления информации об отделе
         public void UpdateDepartment(HRDepartment department, int employees, double hours, decimal rate, double tax, string address, string contact)
         {
             department.UpdateFields(employees, hours, rate, tax, address, contact);
-            ItemUpdated?.Invoke($"Обновлен отдел: {department.CompanyName}");
+            string departmentType = department is ITDepartment ? "ИТ" : "финансовый";
+            ItemUpdated?.Invoke($"Обновлен {departmentType} отдел: {department.CompanyName}");
         }
 
-        // Получение всех отделов
         public IEnumerable<HRDepartment> GetDepartments() => departments;
     }
 }

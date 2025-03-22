@@ -229,14 +229,14 @@ namespace OOP_LB1
                 }
 
                 hrQueue.Enqueue(
-                txtCompanyName.Text,
-                int.TryParse(txtEmployees.Text, out int emp) ? emp : 0,
-                double.TryParse(txtHours.Text, out double hours) ? hours : 0,
-                decimal.TryParse(txtRate.Text, out decimal rate) ? rate : 0,
-                double.TryParse(txtTax.Text, out double tax) ? tax : 0,
-                txtAddress.Text,
-                txtContact.Text
-            );
+                    txtCompanyName.Text,
+                    int.TryParse(txtEmployees.Text, out int emp) ? emp : 0,
+                    double.TryParse(txtHours.Text, out double hours) ? hours : 0,
+                    decimal.TryParse(txtRate.Text, out decimal rate) ? rate : 0,
+                    double.TryParse(txtTax.Text, out double tax) ? tax : 0,
+                    txtAddress.Text,
+                    txtContact.Text
+                );
 
                 UpdateDepartmentList();
             }
