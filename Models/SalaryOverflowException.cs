@@ -1,15 +1,13 @@
 ﻿using System;
-using System.Runtime.InteropServices;
-using System.Windows.Forms;
 
-namespace OOP_LB1
+namespace HRProject.Models
 {
-    public class CustomException : Exception
+    public class SalaryOverflowException : OverflowException
     {
         public string ErrorCode { get; set; }
         public string AdditionalInfo { get; set; }
 
-        public CustomException(string message, string errorCode, string additionalInfo)
+        public SalaryOverflowException(string message, string errorCode, string additionalInfo)
             : base(message)
         {
             ErrorCode = errorCode;
@@ -21,7 +19,4 @@ namespace OOP_LB1
             return $"{ErrorCode} :{AdditionalInfo}";
         }
     }
-
-   
-   
- }
+}

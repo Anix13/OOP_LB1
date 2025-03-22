@@ -5,12 +5,15 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using HRProject.Models;
+using HRProject.Factories;
 
 namespace OOP_LB1
 {
     public partial class HRForm : Form
     {
-        internal HRQueue hrQueue = new HRQueue();
+        private IHRDepartmentFactory factory;
+        internal HRQueue hrQueue;
         internal ComboBox cmbDepartments;
         internal TextBox txtCompanyName, txtEmployees, txtHours, txtRate, txtTax, txtAddress, txtContact;
         internal TextBox txtUpdateEmployees, txtUpdateHours, txtUpdateRate, txtUpdateTax, txtUpdateAddress, txtUpdateContact;
@@ -20,8 +23,12 @@ namespace OOP_LB1
         private ListView lstPerformanceResults;
 
 
+
+
         public HRForm()
         {
+            factory = new HRDepartmentFactory();
+            hrQueue = new HRQueue(factory);
             InitializeComponent();
             InitializeFormComponents();
             InitializePerformanceTab();
@@ -221,17 +228,16 @@ namespace OOP_LB1
                     return;
                 }
 
-                var department = new HRDepartment(
-                    txtCompanyName.Text,
-                    int.TryParse(txtEmployees.Text, out int emp) ? emp : 0,
-                    double.TryParse(txtHours.Text, out double hours) ? hours : 0,
-                    decimal.TryParse(txtRate.Text, out decimal rate) ? rate : 0,
-                    double.TryParse(txtTax.Text, out double tax) ? tax : 0,
-                    txtAddress.Text,
-                    txtContact.Text
-                );
+                hrQueue.Enqueue(
+                txtCompanyName.Text,
+                int.TryParse(txtEmployees.Text, out int emp) ? emp : 0,
+                double.TryParse(txtHours.Text, out double hours) ? hours : 0,
+                decimal.TryParse(txtRate.Text, out decimal rate) ? rate : 0,
+                double.TryParse(txtTax.Text, out double tax) ? tax : 0,
+                txtAddress.Text,
+                txtContact.Text
+            );
 
-                hrQueue.Enqueue(department);
                 UpdateDepartmentList();
             }
             catch (Exception ex)
@@ -331,11 +337,14 @@ namespace OOP_LB1
 
             // Вставка в HRQueue
             stopwatch.Start();
-            var queue = new HRQueue();
+            var factory = new HRDepartmentFactory();
+            var queue = new HRQueue(factory);
+            // Пример, как может выглядеть генерация департаментов
             foreach (var dept in departments)
             {
-                queue.Enqueue(dept);
+                queue.Enqueue(dept.CompanyName, dept.Employees, dept.HoursPerMonth, dept.HourlyRate, dept.TaxRate, dept.Address, dept.Contact);
             }
+
             stopwatch.Stop();
             long queueInsertTime = stopwatch.ElapsedMilliseconds;
 

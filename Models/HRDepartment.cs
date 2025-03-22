@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Net;
+using OOP_LB1;
 
-namespace OOP_LB1
+namespace HRProject.Models
 {
     public class HRDepartment
     {
