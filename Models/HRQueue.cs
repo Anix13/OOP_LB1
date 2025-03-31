@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using HRProject.Factories;
+using HRProject.Models;
 using HRProject.Models.HRProject.Models;
 
 namespace HRProject.Models
@@ -11,7 +11,7 @@ namespace HRProject.Models
 
     public class HRQueue
     {
-        private Queue<HRDepartment> departments = new Queue<HRDepartment>();
+        private Queue<IHRDepartmentAdapter> departments = new Queue<IHRDepartmentAdapter>();
         private readonly IHRDepartmentFactory defaultFactory;
 
         public event HRQueueEventHandler ItemAdded;
@@ -36,22 +36,27 @@ namespace HRProject.Models
                 factory = new FinanceDepartmentFactory(); // Создаем FinanceDepartment
             }
 
-            // Создание объекта через фабрику
-            HRDepartment department = factory.CreateHRDepartment(companyName, employees, hoursPerMonth, hourlyRate, taxRate, address, contact);
+            // Создание объекта через фабрику и адаптер
+            IHRDepartmentAdapter department = factory.CreateHRDepartment(companyName, employees, hoursPerMonth, hourlyRate, taxRate, address, contact);
             departments.Enqueue(department);
 
             // Определяем тип отдела и формируем сообщение
             string departmentType = department is ITDepartment ? "ИТ" : "финансовый";
-            ItemAdded?.Invoke($"Добавлен {departmentType} отдел: {department.CompanyName}");
+            ItemAdded?.Invoke($"Добавлен {departmentType} отдел: {department.GetCompanyInfo()}");
         }
 
-        public void UpdateDepartment(HRDepartment department, int employees, double hours, decimal rate, double tax, string address, string contact)
+        // В методе UpdateDepartment или других методах, где вы пытаетесь обратиться к адресу, используйте метод GetAddress().
+        public void UpdateDepartment(IHRDepartmentAdapter department, int employees, double hours, decimal rate, double tax, string address, string contact)
         {
+            // Обновление данных через адаптер
             department.UpdateFields(employees, hours, rate, tax, address, contact);
+
+            // Получение адреса через метод адаптера
+            string departmentAddress = department.GetAddress();
             string departmentType = department is ITDepartment ? "ИТ" : "финансовый";
-            ItemUpdated?.Invoke($"Обновлен {departmentType} отдел: {department.CompanyName}");
+            ItemUpdated?.Invoke($"Обновлен {departmentType} отдел: {department.GetCompanyInfo()}, Адрес: {departmentAddress}");
         }
 
-        public IEnumerable<HRDepartment> GetDepartments() => departments;
+        public IEnumerable<IHRDepartmentAdapter> GetDepartments() => departments;
     }
 }

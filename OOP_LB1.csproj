@@ -62,8 +62,10 @@
     <Compile Include="HRForm.Designer.cs">
       <DependentUpon>HRForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Models\HRDepartmentAdapter.cs" />
     <Compile Include="Models\HRQueue.cs" />
     <Compile Include="MessageBoxHelper.cs" />
+    <Compile Include="Models\IHRDepartmentAdapter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Models\SalaryOverflowException.cs" />

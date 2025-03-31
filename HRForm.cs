@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using System.Diagnostics;
 using HRProject.Models;
 using HRProject.Factories;
+using System.Collections;
 
 namespace OOP_LB1
 {
@@ -18,7 +18,6 @@ namespace OOP_LB1
         internal TextBox txtCompanyName, txtEmployees, txtHours, txtRate, txtTax, txtAddress, txtContact;
         internal TextBox txtUpdateEmployees, txtUpdateHours, txtUpdateRate, txtUpdateTax, txtUpdateAddress, txtUpdateContact;
         internal DataGridView dgvDepartments;
-        // Добавление нового TabPage для тестирования производительности
         private TabPage performancePage;
         private ListView lstPerformanceResults;
 
@@ -29,6 +28,7 @@ namespace OOP_LB1
         {
             factory = new HRDepartmentFactory();
             hrQueue = new HRQueue(factory);
+
             InitializeComponent();
             InitializeFormComponents();
             InitializePerformanceTab();
@@ -44,7 +44,7 @@ namespace OOP_LB1
                              "23ВП2\n" +
                              "Тареева Мирошниченко";
 
-            MessageBox.Show(message, "Лабораторная работа номер 2", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(message, "Лабораторная работа номер ", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             this.Text = "HR Department Management";
             this.Size = new System.Drawing.Size(1000, 850);
@@ -214,7 +214,8 @@ namespace OOP_LB1
                     return;
                 }
 
-                if (hrQueue.GetDepartments().Any(d => d.CompanyName.Equals(txtCompanyName.Text, StringComparison.OrdinalIgnoreCase)))
+                // Changed to use GetCompanyInfo() instead of CompanyName
+                if (hrQueue.GetDepartments().Any(d => d.GetCompanyInfo().Equals(txtCompanyName.Text, StringComparison.OrdinalIgnoreCase)))
                 {
                     MessageBox.Show("Компания с таким названием уже существует!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
@@ -250,7 +251,7 @@ namespace OOP_LB1
         {
             try
             {
-                if (cmbDepartments.SelectedItem is HRDepartment selectedDept)
+                if (cmbDepartments.SelectedItem is IHRDepartmentAdapter selectedAdapter)
                 {
                     if (!int.TryParse(txtUpdateEmployees.Text, out int updatedEmployees) || updatedEmployees < 0 ||
                         !double.TryParse(txtUpdateHours.Text, out double updatedHours) || updatedHours < 0 ||
@@ -262,13 +263,15 @@ namespace OOP_LB1
                         return;
                     }
 
-                    // Обновляем поля объекта
-                    selectedDept.UpdateFields(updatedEmployees, updatedHours, updatedRate, updatedTax, txtUpdateAddress.Text, txtUpdateContact.Text);
+                    selectedAdapter.UpdateFields(
+                        updatedEmployees,
+                        updatedHours,
+                        updatedRate,
+                        updatedTax,
+                        txtUpdateAddress.Text,
+                        txtUpdateContact.Text
+                    );
 
-                    // Обновляем объект в очереди
-                    hrQueue.UpdateDepartment(selectedDept, updatedEmployees, updatedHours, updatedRate, updatedTax, txtUpdateAddress.Text, txtUpdateContact.Text);
-
-                    // Обновляем отображение данных
                     UpdateDepartmentList();
                 }
             }
@@ -279,17 +282,16 @@ namespace OOP_LB1
         }
 
 
-
         private void CmbDepartments_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (cmbDepartments.SelectedItem is HRDepartment selectedDept)
+            if (cmbDepartments.SelectedItem is IHRDepartmentAdapter selectedAdapter)
             {
-                txtUpdateEmployees.Text = selectedDept.Employees.ToString();
-                txtUpdateHours.Text = selectedDept.HoursPerMonth.ToString();
-                txtUpdateRate.Text = selectedDept.HourlyRate.ToString();
-                txtUpdateTax.Text = selectedDept.TaxRate.ToString();
-                txtUpdateAddress.Text = selectedDept.Address;
-                txtUpdateContact.Text = selectedDept.Contact;
+                txtUpdateEmployees.Text = selectedAdapter.GetEmployees().ToString();
+                txtUpdateHours.Text = selectedAdapter.GetHoursPerMonth().ToString();
+                txtUpdateRate.Text = selectedAdapter.GetHourlyRate().ToString();
+                txtUpdateTax.Text = selectedAdapter.GetTaxRate().ToString();
+                txtUpdateAddress.Text = selectedAdapter.GetAddress();
+                txtUpdateContact.Text = selectedAdapter.GetContact();
             }
         }
 
@@ -310,103 +312,95 @@ namespace OOP_LB1
         private void UpdateDataGridView()
         {
             dgvDepartments.Rows.Clear();
-            foreach (var dept in hrQueue.GetDepartments())
+            foreach (var adapter in hrQueue.GetDepartments())
             {
                 dgvDepartments.Rows.Add(
-                    dept.CompanyName,
-                    dept.Employees,
-                    dept.HoursPerMonth,
-                    dept.HourlyRate,
-                    dept.TaxRate,
-                    dept.Address,
-                    dept.Contact,
-                    dept.CalculateSalary()
+                    adapter.GetCompanyInfo(),  // Changed from CompanyName
+                    adapter.GetEmployees(),   // Changed from Employees
+                    adapter.GetHoursPerMonth(), // Changed from HoursPerMonth
+                    adapter.GetHourlyRate(),   // Changed from HourlyRate
+                    adapter.GetTaxRate(),     // Changed from TaxRate
+                    adapter.GetAddress(),      // Changed from Address
+                    adapter.GetContact(),     // Changed from Contact
+                    adapter.CalculateSalary()  // This remains the same
                 );
             }
         }
         private void PerformPerformanceTest()
         {
             int count = 500000;
-            // Очистка таблицы перед заполнением новыми результатами
             lstPerformanceResults.Items.Clear();
 
             var stopwatch = new Stopwatch();
-
-            // Генерация 100 000 элементов
             var departments = GenerateDepartments(count);
 
             // Вставка в HRQueue
             stopwatch.Start();
             var factory = new HRDepartmentFactory();
             var queue = new HRQueue(factory);
-            // Пример, как может выглядеть генерация департаментов
             foreach (var dept in departments)
             {
                 queue.Enqueue(dept.CompanyName, dept.Employees, dept.HoursPerMonth, dept.HourlyRate, dept.TaxRate, dept.Address, dept.Contact);
             }
-
             stopwatch.Stop();
             long queueInsertTime = stopwatch.ElapsedMilliseconds;
 
-            // Вставка в массив
+            // Вставка в массив адаптеров
             stopwatch.Reset();
             stopwatch.Start();
-            var deptArray = new HRDepartment[count];
+            var adapterArray = new IHRDepartmentAdapter[count];
             for (int i = 0; i < count; i++)
             {
-                deptArray[i] = departments[i];
+                adapterArray[i] = new HRDepartmentAdapter(departments[i]);
             }
             stopwatch.Stop();
             long arrayInsertTime = stopwatch.ElapsedMilliseconds;
 
-            // Добавление строк в таблицу с результатами
             lstPerformanceResults.Items.Add(new ListViewItem(new[] { "Вставка", arrayInsertTime.ToString(), queueInsertTime.ToString() }));
 
             // Выборка по порядку из HRQueue
             stopwatch.Reset();
             stopwatch.Start();
-            foreach (var dept in queue.GetDepartments())
+            foreach (var adapter in queue.GetDepartments())
             {
-                var dummy = dept.CompanyName; // Просто выборка для теста
+                var dummy = adapter.GetCompanyInfo(); // Changed from CompanyName to GetCompanyInfo()
             }
             stopwatch.Stop();
             long queueSelectSequentialTime = stopwatch.ElapsedMilliseconds;
 
-            // Выборка по порядку из массива
+            // Выборка по порядку из массива адаптеров
             stopwatch.Reset();
             stopwatch.Start();
-            foreach (var dept in deptArray)
+            foreach (var adapter in adapterArray)
             {
-                var dummy = dept.CompanyName; // Просто выборка для теста
+                var dummy = adapter.GetCompanyInfo(); // Changed from CompanyName to GetCompanyInfo()
             }
             stopwatch.Stop();
             long arraySelectSequentialTime = stopwatch.ElapsedMilliseconds;
 
-            // Добавление строк в таблицу с результатами
             lstPerformanceResults.Items.Add(new ListViewItem(new[] { "Выборка по порядку", arraySelectSequentialTime.ToString(), queueSelectSequentialTime.ToString() }));
 
             // Выборка случайным порядком для HRQueue
             stopwatch.Reset();
             stopwatch.Start();
             var random = new Random();
-            foreach (var dept in queue.GetDepartments().OrderBy(x => random.Next()))
+            foreach (var adapter in queue.GetDepartments().OrderBy(x => random.Next()))
             {
-                var dummy = dept.CompanyName; // Просто выборка для теста
+                var dummy = adapter.GetCompanyInfo(); // Changed from CompanyName to GetCompanyInfo()
             }
             stopwatch.Stop();
             long queueSelectRandomTime = stopwatch.ElapsedMilliseconds;
 
-            // Выборка случайным порядком для массива
+            // Выборка случайным порядком для массива адаптеров
             stopwatch.Reset();
             stopwatch.Start();
-            foreach (var dept in deptArray.OrderBy(x => random.Next()))
+            foreach (var adapter in adapterArray.OrderBy(x => random.Next()))
             {
-                var dummy = dept.CompanyName; // Просто выборка для теста
+                var dummy = adapter.GetCompanyInfo(); // Changed from CompanyName to GetCompanyInfo()
             }
             stopwatch.Stop();
             long arraySelectRandomTime = stopwatch.ElapsedMilliseconds;
 
-            // Добавление строк в таблицу с результатами
             lstPerformanceResults.Items.Add(new ListViewItem(new[] { "Выборка случайным порядком", arraySelectRandomTime.ToString(), queueSelectRandomTime.ToString() }));
         }
 
