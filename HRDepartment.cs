@@ -6,21 +6,28 @@ namespace OOP_LB1
     public class HRDepartment
     {
         public static int Count { get; private set; }
+        private IHRState _currentState;
 
         public string CompanyName { get; set; }
         public int Employees { get; set; }
         public double HoursPerMonth { get; set; }
-        public decimal HourlyRate { get; set; }  
+        public decimal HourlyRate { get; set; }
         public double TaxRate { get; set; }
         public string Address { get; set; }
         public string Contact { get; set; }
-        public decimal GrossSalary {  get; set; }
+        public decimal GrossSalary { get; set; }
+        public string CurrentStatus => _currentState.GetStatus();
 
         public HRDepartment()
         {
             Count++;
+            _currentState = new ActiveState(); 
         }
-
+        public void SetState(IHRState newState)
+        {
+            _currentState = newState;
+            _currentState.Handle(this);
+        }
         public HRDepartment(string companyName) : this()
         {
             CompanyName = companyName;
@@ -60,37 +67,44 @@ namespace OOP_LB1
 
         public decimal CalculateSalary()
         {
+            if (!_currentState.CanCalculateSalary)
+                throw new InvalidOperationException($"Расчет зарплаты невозможен в состоянии: {_currentState.GetStatus()}");
+
+            _currentState.Handle(this); // Проверяем возможность операции
+
             if (Employees <= 0 || HoursPerMonth <= 0 || HourlyRate <= 0)
             {
                 throw new CustomException("Невозможно вычислить зарплату из-за отрицательных значений.",
-                                           "HR001", "Введены неположительные значения для сотрудников, часов, ставки или налога.");
+                                       "HR001", "Введены неположительные значения для сотрудников, часов, ставки или налога.");
             }
 
             decimal grossSalary = (decimal)HoursPerMonth * HourlyRate;
 
-            // Проверка на переполнение
-            if ((grossSalary > 100000000) || (grossSalary < 0))
+            if (grossSalary > 100000000 || grossSalary < 0)
             {
                 throw new SalaryOverflowException("Переполнение при расчете зарплаты.",
-                                                  "HR002", "Зарплата слишком велика для обработки. Слишком большие значения почасовой ставки или кол-ва часов");
+                                                "HR002", "Зарплата слишком велика для обработки.");
             }
 
             return Math.Abs(grossSalary - (grossSalary * (decimal)TaxRate / 100));
         }
 
-    
 
-    // Метод для изменения полей на основе пользовательского ввода
-    public void UpdateFields(int employees, double hoursPerMonth, decimal hourlyRate, double taxRate, string address, string contact)
+
+        // Метод для изменения полей на основе пользовательского ввода
+        public void UpdateFields(int employees, double hoursPerMonth, decimal hourlyRate,
+                           double taxRate, string address, string contact)
         {
+            if (!_currentState.CanModify)
+                throw new InvalidOperationException($"Обновление невозможно в состоянии: {_currentState.GetStatus()}");
+
+
             Employees = employees;
             HoursPerMonth = hoursPerMonth;
             HourlyRate = hourlyRate;
             TaxRate = taxRate;
             Address = address;
             Contact = contact;
-
-            // Если зарплата зависит от этих значений, пересчитываем её.
             GrossSalary = CalculateSalary();
         }
 

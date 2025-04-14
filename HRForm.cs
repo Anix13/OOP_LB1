@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -12,32 +13,31 @@ namespace OOP_LB1
     {
         internal HRQueue hrQueue = new HRQueue();
         internal ComboBox cmbDepartments;
+        internal ComboBox cmbStates;
         internal TextBox txtCompanyName, txtEmployees, txtHours, txtRate, txtTax, txtAddress, txtContact;
         internal TextBox txtUpdateEmployees, txtUpdateHours, txtUpdateRate, txtUpdateTax, txtUpdateAddress, txtUpdateContact;
         internal DataGridView dgvDepartments;
-        // Добавление нового TabPage для тестирования производительности
         private TabPage performancePage;
         private ListView lstPerformanceResults;
-
+        private ToolStripStatusLabel statusLabel;
 
         public HRForm()
         {
-            InitializeComponent();
+            InitializeComponent(); // Должно быть ПЕРВЫМ вызовом в конструкторе
             InitializeFormComponents();
             InitializePerformanceTab();
 
+            hrQueue = new HRQueue(); // Инициализация hrQueue перед подпиской на события
 
             hrQueue.ItemAdded += msg => MessageBox.Show(msg, "Информация", MessageBoxButtons.OK, MessageBoxIcon.Information);
             hrQueue.ItemUpdated += msg => MessageBox.Show(msg, "Информация", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            hrQueue.StateChanged += msg => MessageBox.Show(msg, "Информация", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void InitializeFormComponents()
         {
-            string message = "Вариант 7:  Отдел кадров\n" +
-                             "23ВП2\n" +
-                             "Тареева Мирошниченко";
-
-            MessageBox.Show(message, "Лабораторная работа номер 2", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            string message = "Вариант 7: Отдел кадров\n23ВП2\nТареева Мирошниченко";
+            MessageBox.Show(message, "Лабораторная работа номер 5", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             this.Text = "HR Department Management";
             this.Size = new System.Drawing.Size(1000, 850);
@@ -57,8 +57,13 @@ namespace OOP_LB1
 
             tabControl.TabPages.AddRange(new TabPage[] { createPage, updatePage, viewPage });
             this.Controls.Add(tabControl);
-        }
 
+            // Добавляем статус бар
+            StatusStrip statusStrip = new StatusStrip();
+            statusLabel = new ToolStripStatusLabel();
+            statusStrip.Items.Add(statusLabel);
+            this.Controls.Add(statusStrip);
+        }
         private void InitializePerformanceTab()
         {
             performancePage = new TabPage("Тест производительности") { BackColor = System.Drawing.Color.LightSteelBlue };
@@ -115,6 +120,8 @@ namespace OOP_LB1
         private FlowLayoutPanel CreateDepartmentPanel()
         {
             FlowLayoutPanel panel = CreateBasePanel();
+
+            // Создаем элементы управления
             Label lblCompanyName = new Label { Width = 250, Text = "Название компании" };
             Label lblEmployees = new Label { Width = 250, Text = "Кол-во сотрудников" };
             Label lblHours = new Label { Width = 250, Text = "Часы в месяц" };
@@ -134,26 +141,39 @@ namespace OOP_LB1
             Button btnCreate = new Button { Text = "Создать", Width = 250 };
             btnCreate.Click += BtnCreate_Click;
 
+            // Добавляем элементы на панель (без выбора состояния)
+            panel.Controls.AddRange(new Control[] {
+        txtCompanyName,lblCompanyName,
+        txtEmployees, lblEmployees,
+        txtHours, lblHours,
+        txtRate,lblRate,
+        txtTax, lblTax,
+        txtAddress, lblAddress,
+        txtContact, lblContact, 
+        btnCreate
+    });
 
-
-            panel.Controls.AddRange(new Control[] { lblCompanyName, txtCompanyName, lblEmployees, txtEmployees, lblHours, txtHours, lblRate, txtRate, lblTax,
-                txtTax, lblAddress, txtAddress, lblContact, txtContact, btnCreate });
             return panel;
         }
+
+
 
         private FlowLayoutPanel UpdateDepartmentPanel()
         {
             FlowLayoutPanel panel = CreateBasePanel();
 
+            // Создаем элементы управления
+            Label lblCompanyName = new Label { Width = 250, Text = "Выберите отдел:" };
             cmbDepartments = new ComboBox { Width = 250 };
             cmbDepartments.SelectedIndexChanged += CmbDepartments_SelectedIndexChanged;
-            Label lblCompanyName = new Label { Width = 250, Text = "Название компании:" };
+
             Label lblEmployees = new Label { Width = 250, Text = "Кол-во сотрудников:" };
             Label lblHours = new Label { Width = 250, Text = "Часы в месяц:" };
             Label lblRate = new Label { Width = 250, Text = "Почасовая ставка:" };
             Label lblTax = new Label { Width = 250, Text = "Налог:" };
             Label lblAddress = new Label { Width = 250, Text = "Адрес:" };
             Label lblContact = new Label { Width = 250, Text = "Контакт:" };
+            Label lblState = new Label { Width = 250, Text = "Изменить состояние:" };
 
             txtUpdateEmployees = new TextBox { Width = 250 };
             txtUpdateHours = new TextBox { Width = 250 };
@@ -162,14 +182,55 @@ namespace OOP_LB1
             txtUpdateAddress = new TextBox { Width = 250 };
             txtUpdateContact = new TextBox { Width = 250 };
 
-            Button btnUpdate = new Button { Text = "Обновить", Width = 250 };
+            // ComboBox для состояний
+            cmbStates = new ComboBox { Width = 250 };
+            cmbStates.Items.AddRange(new object[] {
+        new ActiveState(),
+        new PassiveState()
+    });
+            cmbStates.DisplayMember = "GetStatus";
+            cmbStates.SelectedIndex = 0;
+
+            // Кнопки
+            Button btnUpdate = new Button { Text = "Обновить данные", Width = 250 };
             btnUpdate.Click += BtnUpdate_Click;
 
-            panel.Controls.AddRange(new Control[] { lblCompanyName, cmbDepartments, lblEmployees, txtUpdateEmployees, lblHours, txtUpdateHours,
-                lblRate, txtUpdateRate, lblTax, txtUpdateTax, lblAddress, txtUpdateAddress, lblContact, txtUpdateContact, btnUpdate });
+            Button btnChangeState = new Button { Text = "Изменить состояние", Width = 250 };
+            btnChangeState.Click += BtnChangeState_Click;
+
+            // Добавляем элементы на панель
+            panel.Controls.AddRange(new Control[] {
+        cmbDepartments, lblCompanyName,
+        txtUpdateEmployees, lblEmployees,
+        txtUpdateHours, lblHours,
+        txtUpdateRate, lblRate,
+        txtUpdateTax, lblTax,
+        txtUpdateAddress, lblAddress,
+        txtUpdateContact, lblContact,
+        cmbStates, lblState, 
+        btnChangeState,
+        btnUpdate
+    });
+
+            // Заполняем ComboBox отделами
+            UpdateDepartmentComboBox();
+
             return panel;
         }
 
+        private void UpdateDepartmentComboBox()
+        {
+            cmbDepartments.Items.Clear();
+            foreach (var dept in hrQueue.GetDepartments())
+            {
+                cmbDepartments.Items.Add(dept);
+            }
+            cmbDepartments.DisplayMember = "CompanyName";
+            if (cmbDepartments.Items.Count > 0)
+            {
+                cmbDepartments.SelectedIndex = 0;
+            }
+        }
         private FlowLayoutPanel CreateBasePanel()
         {
             return new FlowLayoutPanel
@@ -191,12 +252,64 @@ namespace OOP_LB1
             dgvDepartments.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Налог", DataPropertyName = "TaxRate", Width = 100 });
             dgvDepartments.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Адрес", DataPropertyName = "Address", Width = 150 });
             dgvDepartments.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Контакт", DataPropertyName = "Contact", Width = 150 });
+            dgvDepartments.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Статус", DataPropertyName = "CurrentStatus", Width = 150 });
             dgvDepartments.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Средняя зп сотрудника", DataPropertyName = "GrossSalary", Width = 150 });
 
             UpdateDataGridView();
             return dgvDepartments;
         }
+        private IHRState CreateStateFromStatus(string status)
+        {
+            switch (status)
+            {
+                case "Активный":
+                    return new ActiveState();
 
+                case "Пассивный":
+                    return new PassiveState();
+                default:
+                    throw new ArgumentException($"Unknown status: {status}");
+            }
+        }
+        private void BtnChangeState_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (cmbDepartments.SelectedItem is HRDepartment selectedDept &&
+                    cmbStates.SelectedItem is IHRState selectedState)
+                {
+                    // Получаем статус из выбранного состояния
+                    string status = selectedState.GetStatus();
+
+                    // Создаем новое состояние на основе статуса
+                    IHRState newState;
+                    switch (status)
+                    {
+                        case "Активный":
+                            newState = new ActiveState();
+                            break;
+                        case "Пассивный":
+                            newState = new PassiveState();
+                            break;
+                        default:
+                            throw new ArgumentException($"Unknown status: {status}");
+                    }
+
+                    // Применяем новое состояние
+                    hrQueue.ChangeDepartmentState(selectedDept, newState);
+
+                    // Обновляем UI
+                    UpdateDepartmentList();
+                    statusLabel.Text = $"Текущий статус: {selectedDept.CurrentStatus}";
+
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при изменении состояния: {ex.Message}",
+                              "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
         internal void BtnCreate_Click(object sender, EventArgs e)
         {
             try
@@ -231,6 +344,9 @@ namespace OOP_LB1
                     txtContact.Text
                 );
 
+                // Устанавливаем состояние по умолчанию (ActiveState)
+                department.SetState(new ActiveState());
+
                 hrQueue.Enqueue(department);
                 UpdateDepartmentList();
             }
@@ -246,6 +362,13 @@ namespace OOP_LB1
             {
                 if (cmbDepartments.SelectedItem is HRDepartment selectedDept)
                 {
+                    if (selectedDept.CurrentStatus == "Пассивный")
+                    {
+                        MessageBox.Show("Невозможно изменить данные отдела в пассивном состоянии.",
+                                      "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
                     if (!int.TryParse(txtUpdateEmployees.Text, out int updatedEmployees) || updatedEmployees < 0 ||
                         !double.TryParse(txtUpdateHours.Text, out double updatedHours) || updatedHours < 0 ||
                         !decimal.TryParse(txtUpdateRate.Text, out decimal updatedRate) || updatedRate < 0 ||
@@ -256,13 +379,8 @@ namespace OOP_LB1
                         return;
                     }
 
-                    // Обновляем поля объекта
-                    selectedDept.UpdateFields(updatedEmployees, updatedHours, updatedRate, updatedTax, txtUpdateAddress.Text, txtUpdateContact.Text);
-
-                    // Обновляем объект в очереди
-                    hrQueue.UpdateDepartment(selectedDept, updatedEmployees, updatedHours, updatedRate, updatedTax, txtUpdateAddress.Text, txtUpdateContact.Text);
-
-                    // Обновляем отображение данных
+                    hrQueue.UpdateDepartment(selectedDept, updatedEmployees, updatedHours, updatedRate,
+                                          updatedTax, txtUpdateAddress.Text, txtUpdateContact.Text);
                     UpdateDepartmentList();
                 }
             }
@@ -276,14 +394,70 @@ namespace OOP_LB1
 
         private void CmbDepartments_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (cmbDepartments.SelectedItem is HRDepartment selectedDept)
+            try
             {
-                txtUpdateEmployees.Text = selectedDept.Employees.ToString();
-                txtUpdateHours.Text = selectedDept.HoursPerMonth.ToString();
-                txtUpdateRate.Text = selectedDept.HourlyRate.ToString();
-                txtUpdateTax.Text = selectedDept.TaxRate.ToString();
-                txtUpdateAddress.Text = selectedDept.Address;
-                txtUpdateContact.Text = selectedDept.Contact;
+                if (cmbDepartments.SelectedItem is HRDepartment selectedDept)
+                {
+                    // Update text fields
+                    txtUpdateEmployees.Text = selectedDept.Employees.ToString();
+                    txtUpdateHours.Text = selectedDept.HoursPerMonth.ToString();
+                    txtUpdateRate.Text = selectedDept.HourlyRate.ToString("N2");
+                    txtUpdateTax.Text = selectedDept.TaxRate.ToString("N1");
+                    txtUpdateAddress.Text = selectedDept.Address;
+                    txtUpdateContact.Text = selectedDept.Contact;
+
+                    // Enable/disable fields based on status
+                    bool isActive = selectedDept.CurrentStatus == "Активный";
+                    txtUpdateEmployees.Enabled = isActive;
+                    txtUpdateHours.Enabled = isActive;
+                    txtUpdateRate.Enabled = isActive;
+                    txtUpdateTax.Enabled = isActive;
+                    txtUpdateAddress.Enabled = isActive;
+                    txtUpdateContact.Enabled = isActive;
+
+                    UpdateStatesComboBox(selectedDept);
+                    statusLabel.Text = $"Текущий статус: {selectedDept.CurrentStatus}";
+                    HighlightSelectedDepartmentInGrid(selectedDept);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при загрузке данных отдела: {ex.Message}",
+                               "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        private void UpdateStatesComboBox(HRDepartment department)
+        {
+            // Ищем соответствующее состояние в ComboBox
+            foreach (var item in cmbStates.Items)
+            {
+                if (item is IHRState state && state.GetStatus() == department.CurrentStatus)
+                {
+                    cmbStates.SelectedItem = item;
+                    return;
+                }
+            }
+
+            // Если не нашли - выбираем первый элемент
+            if (cmbStates.Items.Count > 0)
+            {
+                cmbStates.SelectedIndex = 0;
+            }
+        }
+
+        private void HighlightSelectedDepartmentInGrid(HRDepartment department)
+        {
+            if (dgvDepartments == null || dgvDepartments.Rows.Count == 0)
+                return;
+
+            foreach (DataGridViewRow row in dgvDepartments.Rows)
+            {
+                if (row.Cells[0].Value?.ToString() == department.CompanyName)
+                {
+                    row.Selected = true;
+                    dgvDepartments.FirstDisplayedScrollingRowIndex = row.Index;
+                    break;
+                }
             }
         }
 
@@ -303,10 +477,12 @@ namespace OOP_LB1
 
         private void UpdateDataGridView()
         {
+            dgvDepartments.SuspendLayout();
             dgvDepartments.Rows.Clear();
+
             foreach (var dept in hrQueue.GetDepartments())
             {
-                dgvDepartments.Rows.Add(
+                int rowIndex = dgvDepartments.Rows.Add(
                     dept.CompanyName,
                     dept.Employees,
                     dept.HoursPerMonth,
@@ -314,9 +490,18 @@ namespace OOP_LB1
                     dept.TaxRate,
                     dept.Address,
                     dept.Contact,
+                    dept.CurrentStatus,
                     dept.CalculateSalary()
                 );
+
+                // Подсветка строк в зависимости от состояния
+                if (dept.CurrentStatus == "Заморожен")
+                    dgvDepartments.Rows[rowIndex].DefaultCellStyle.BackColor = Color.LightGray;
+                else if (dept.CurrentStatus == "Пассивный")
+                    dgvDepartments.Rows[rowIndex].DefaultCellStyle.BackColor = Color.LightYellow;
             }
+
+            dgvDepartments.ResumeLayout();
         }
         private void PerformPerformanceTest()
         {
