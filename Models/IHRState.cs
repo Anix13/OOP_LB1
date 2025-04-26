@@ -1,4 +1,4 @@
-﻿using OOP_LB1;
+﻿using OOP_LB1.Models;
 using System;
 
 public interface IHRState
@@ -7,10 +7,8 @@ public interface IHRState
     string GetStatus();
     bool CanModify { get; }
     bool CanCalculateSalary { get; }
-
 }
 
-// Конкретные состояния
 public class ActiveState : IHRState
 {
     public void Handle(HRDepartment department)
@@ -23,13 +21,10 @@ public class ActiveState : IHRState
     public bool CanCalculateSalary => true;
 }
 
-
-
 public class PassiveState : IHRState
 {
     public void Handle(HRDepartment department)
     {
-        // В пассивном состоянии можно только просматривать данные и рассчитывать зарплату
         if (department.Employees <= 0)
         {
             throw new InvalidOperationException("Необходимо указать количество сотрудников");
@@ -39,4 +34,18 @@ public class PassiveState : IHRState
     public string GetStatus() => "Пассивный";
     public bool CanModify => false;
     public bool CanCalculateSalary => true;
+}
+
+// Добавим фабрику для создания состояний
+public static class HRStateFactory
+{
+    public static IHRState CreateState(string stateType)
+    {
+        return stateType switch
+        {
+            "Active" => new ActiveState(),
+            "Passive" => new PassiveState(),
+            _ => throw new ArgumentException("Неизвестный тип состояния")
+        };
+    }
 }

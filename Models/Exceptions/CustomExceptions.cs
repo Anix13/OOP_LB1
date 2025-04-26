@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-namespace OOP_LB1
+namespace OOP_LB1.Models.Exceptions
 {
     public class CustomException : Exception
     {

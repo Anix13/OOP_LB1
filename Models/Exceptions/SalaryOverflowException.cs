@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace OOP_LB1
+namespace OOP_LB1.Models.Exceptions
 {
     public class SalaryOverflowException : OverflowException
     {

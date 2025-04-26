@@ -1,4 +1,4 @@
-﻿namespace OOP_LB1
+﻿namespace OOP_LB1.Views
 {
     partial class HRForm
     {
